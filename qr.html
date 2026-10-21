@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>QR de la encuesta</title>
+    <style>
+      body {
+        margin: 0;
+        background: #fff;
+        color: #2b2a28;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        text-align: center;
+      }
+      .wrap {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 40px 16px;
+      }
+      h1 {
+        font-size: 1.8rem;
+        margin: 0 0 6px;
+      }
+      p {
+        color: #7a756d;
+        margin: 0 0 24px;
+      }
+      #qr {
+        display: inline-block;
+        padding: 16px;
+        border: 1px solid #e4ded4;
+        border-radius: 16px;
+      }
+      #qr img,
+      #qr canvas {
+        display: block;
+        width: 280px;
+        height: 280px;
+      }
+      button {
+        margin-top: 20px;
+        padding: 12px 24px;
+        font: inherit;
+        font-weight: 600;
+        border: 0;
+        border-radius: 12px;
+        background: #6b8f71;
+        color: #fff;
+        cursor: pointer;
+      }
+      @media print {
+        button {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>¿Qué tal la clase de hoy?</h1>
+      <p>Escanea el código y responde · anónima, 1 minuto</p>
+      <div id="qr"></div>
+      <button onclick="window.print()">Imprimir</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+      // Genera el QR apuntando a encuesta.html en la misma carpeta publicada
+      const url = new URL("encuesta.html", location.href).href;
+      new QRCode(document.getElementById("qr"), {
+        text: url,
+        width: 560,
+        height: 560,
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    </script>
+  </body>
+</html>

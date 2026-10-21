@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Qué tal la clase de hoy?</title>
+<style>
+  :root{
+    --bg:#f6f3ee; --card:#ffffff; --ink:#2b2a28; --muted:#7a756d;
+    --line:#e4ded4; --accent:#6b8f71; --accent-ink:#ffffff; --sel:#2b2a28;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.4}
+  .wrap{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+  header{text-align:center;margin-bottom:20px}
+  h1{font-size:1.7rem;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .row label{flex:1;min-width:140px;font-weight:600}
+  input[type=date],input[type=time],input[type=text],textarea{
+    width:100%;margin-top:6px;padding:10px 12px;font:inherit;border:1px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink)}
+  textarea{min-height:90px;resize:vertical}
+  h2{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+  .q{margin-bottom:22px}
+  .q:last-child{margin-bottom:0}
+  .q-title{font-weight:600;margin-bottom:10px}
+  .scale{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+  .scale button{
+    aspect-ratio:1;min-height:34px;border:1px solid var(--line);border-radius:8px;background:#fff;
+    font:inherit;font-weight:600;cursor:pointer;color:var(--ink);padding:0}
+  .scale button.on{background:var(--sel);color:#fff;border-color:var(--sel)}
+  .scale-labels{display:flex;justify-content:space-between;font-size:.8rem;color:var(--muted);margin-top:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--line);
+    border-radius:999px;cursor:pointer;user-select:none;background:#fff}
+  .chip input{display:none}
+  .chip.on{background:var(--sel);color:#fff;border-color:var(--sel)}
+  #otroTxt{display:none;margin-top:10px}
+  .submit{width:100%;padding:16px;font:inherit;font-size:1.1rem;font-weight:700;border:0;border-radius:14px;
+    background:var(--accent);color:var(--accent-ink);cursor:pointer}
+  .submit:disabled{opacity:.6;cursor:wait}
+  .err{color:#b4483c;text-align:center;margin:10px 0 0;min-height:1.2em}
+  .thanks{display:none;text-align:center;padding:60px 20px}
+  .thanks h2{font-size:1.6rem;text-transform:none;letter-spacing:0;color:var(--ink)}
+  .thanks button{margin-top:20px;padding:14px 28px;font:inherit;font-weight:600;border:0;border-radius:12px;
+    background:var(--accent);color:#fff;cursor:pointer}
+  .foot{text-align:center;margin-top:24px}
+  .foot a{color:var(--muted);font-size:.85rem}
+  .scale button{min-width:0}
+  /* Móvil: escala 0-10 en dos filas con botones grandes para el dedo */
+  @media (max-width:480px){
+    .scale{grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+    .scale button{aspect-ratio:auto;height:44px;font-size:1rem}
+    .card{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <form id="f" autocomplete="off">
+    <header>
+      <h1>¿Qué tal la clase de hoy?</h1>
+      <p class="sub">Anónima y voluntaria · 1 minuto</p>
+    </header>
+
+    <div class="card row">
+      <label>Fecha<input type="date" id="fecha" required></label>
+      <label>Hora de la clase<input type="time" id="hora"></label>
+    </div>
+
+    <div class="card">
+      <h2>Al empezar la clase</h2>
+      <div class="q">
+        <div class="q-title">Dolor</div>
+        <div class="scale" data-name="dolorInicio"></div>
+        <div class="scale-labels"><span>sin dolor</span><span>el peor dolor imaginable</span></div>
+      </div>
+      <div class="q">
+        <div class="q-title">Si tienes dolor, ¿dónde?</div>
+        <div class="chips" id="zonas"></div>
+        <input type="text" id="otroTxt" placeholder="Otro: escribe dónde">
+      </div>
+      <div class="q">
+        <div class="q-title">Motivación</div>
+        <div class="scale" data-name="motivacionInicio"></div>
+        <div class="scale-labels"><span>nada</span><span>muchísima</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Ahora, al terminar</h2>
+      <div class="q">
+        <div class="q-title">Dolor</div>
+        <div class="scale" data-name="dolorFin"></div>
+        <div class="scale-labels"><span>sin dolor</span><span>el peor dolor imaginable</span></div>
+      </div>
+      <div class="q">
+        <div class="q-title">Motivación</div>
+        <div class="scale" data-name="motivacionFin"></div>
+        <div class="scale-labels"><span>nada</span><span>muchísima</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="q">
+        <div class="q-title">Algo que te ha gustado:</div>
+        <textarea id="gustado"></textarea>
+      </div>
+      <div class="q">
+        <div class="q-title">Algo que te ha gustado menos o cambiarías:</div>
+        <textarea id="cambiarias"></textarea>
+      </div>
+    </div>
+
+    <button class="submit" type="submit">Enviar</button>
+    <p class="err" id="err"></p>
+  </form>
+
+  <div class="thanks" id="thanks">
+    <h2>¡Gracias por tu respuesta! 🙌</h2>
+    <p class="sub">Tu opinión es anónima.</p>
+    <button type="button" id="otra">Nueva encuesta</button>
+  </div>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+const ZONAS = ['Cuello','Espalda alta','Lumbar','Hombro','Cadera','Rodilla','Pie / tobillo','Otro'];
+const valores = {};
+
+// Escalas 0-10
+document.querySelectorAll('.scale').forEach(sc => {
+  const name = sc.dataset.name;
+  for (let i = 0; i <= 10; i++) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = i;
+    b.onclick = () => {
+      sc.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on'); valores[name] = i;
+    };
+    sc.appendChild(b);
+  }
+});
+
+// Zonas de dolor
+const zonasEl = document.getElementById('zonas');
+const otroTxt = document.getElementById('otroTxt');
+ZONAS.forEach(z => {
+  const l = document.createElement('label');
+  l.className = 'chip';
+  l.innerHTML = `<input type="checkbox" value="${z}">${z}`;
+  const cb = l.querySelector('input');
+  cb.onchange = () => {
+    l.classList.toggle('on', cb.checked);
+    if (z === 'Otro') otroTxt.style.display = cb.checked ? 'block' : 'none';
+  };
+  zonasEl.appendChild(l);
+});
+
+function hoy(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function reset(){
+  document.getElementById('f').reset();
+  document.getElementById('fecha').value = hoy();
+  Object.keys(valores).forEach(k => delete valores[k]);
+  document.querySelectorAll('.scale button.on,.chip.on').forEach(x => x.classList.remove('on'));
+  otroTxt.style.display = 'none';
+  document.getElementById('err').textContent = '';
+}
+reset();
+
+document.getElementById('f').onsubmit = async e => {
+  e.preventDefault();
+  const err = document.getElementById('err');
+  const faltan = ['dolorInicio','motivacionInicio','dolorFin','motivacionFin'].filter(k => valores[k] === undefined);
+  if (faltan.length) { err.textContent = 'Por favor, marca un valor en las escalas de dolor y motivación.'; return; }
+
+  let zonas = [...zonasEl.querySelectorAll('input:checked')].map(c => c.value);
+  if (zonas.includes('Otro')) {
+    const t = otroTxt.value.trim();
+    zonas = zonas.map(z => z === 'Otro' ? (t ? 'Otro: ' + t : 'Otro') : z);
+  }
+
+  const r = {
+    fecha: document.getElementById('fecha').value,
+    hora: document.getElementById('hora').value || null,
+    dolor_inicio: valores.dolorInicio,
+    zonas,
+    motivacion_inicio: valores.motivacionInicio,
+    dolor_fin: valores.dolorFin,
+    motivacion_fin: valores.motivacionFin,
+    gustado: document.getElementById('gustado').value.trim() || null,
+    cambiarias: document.getElementById('cambiarias').value.trim() || null
+  };
+
+  const btn = document.querySelector('.submit');
+  btn.disabled = true; btn.textContent = 'Enviando…'; err.textContent = '';
+  try {
+    const { url, anonKey } = window.SUPABASE_CONFIG;
+    const res = await fetch(url.replace(/\/$/, '') + '/rest/v1/respuestas', {
+      method: 'POST',
+      headers: { 'apikey': anonKey, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(r)
+    });
+    if (!res.ok) throw new Error(await res.text());
+  } catch (ex) {
+    console.error(ex);
+    err.textContent = 'No se ha podido enviar. Revisa la conexión e inténtalo de nuevo.';
+    return;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar';
+  }
+
+  document.getElementById('f').style.display = 'none';
+  document.getElementById('thanks').style.display = 'block';
+  window.scrollTo(0,0);
+};
+
+document.getElementById('otra').onclick = () => {
+  reset();
+  document.getElementById('thanks').style.display = 'none';
+  document.getElementById('f').style.display = 'block';
+  window.scrollTo(0,0);
+};
+</script>
+</body>
+</html>

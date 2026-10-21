@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Resultados de la encuesta</title>
+<style>
+  :root{ --bg:#f6f3ee; --card:#fff; --ink:#2b2a28; --muted:#7a756d; --line:#e4ded4;
+    --accent:#6b8f71; --good:#3f8a55; --bad:#b4483c; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.4}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+  h1{margin:0;font-size:1.6rem}
+  .sub{color:var(--muted);margin:2px 0 0}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tools input,.tools button,.tools a{font:inherit;font-size:.9rem;padding:8px 12px;border:1px solid var(--line);
+    border-radius:10px;background:#fff;color:var(--ink);cursor:pointer;text-decoration:none}
+  .tools a.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .stat .k{font-size:.8rem;color:var(--muted)}
+  .stat .v{font-size:1.5rem;font-weight:700;margin-top:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;position:relative}
+  .card-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;padding-right:26px}
+  .date{font-weight:700;font-size:1.05rem;text-transform:capitalize}
+  .time{color:var(--muted);font-size:.9rem}
+  .del{position:absolute;top:12px;right:12px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:1.1rem}
+  .del:hover{color:var(--bad)}
+  .metric{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+  .metric .lab{color:var(--muted);font-size:.9rem}
+  .metric .val{font-weight:700}
+  .metric .val small{font-weight:600;margin-left:6px}
+  .up{color:var(--good)} .down{color:var(--bad)} .eq{color:var(--muted)}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .tag{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.8rem}
+  .txt{border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+  .txt .lab{color:var(--muted);font-size:.8rem}
+  .txt p{margin:2px 0 6px;white-space:pre-wrap}
+  @media (max-width:480px){
+    .tools input{font-size:16px} /* evita el zoom automático de iOS */
+    .grid{grid-template-columns:1fr}
+    .stat .v{font-size:1.3rem}
+  }
+  .empty{text-align:center;color:var(--muted);padding:60px 0}
+  /* Login */
+  #login{max-width:360px;margin:12vh auto 0;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+  #login h1{font-size:1.3rem;margin-bottom:16px}
+  #login label{display:block;font-weight:600;margin-bottom:12px}
+  #login input{width:100%;margin-top:6px;padding:10px 12px;font:inherit;border:1px solid var(--line);border-radius:10px}
+  #login button{width:100%;padding:12px;font:inherit;font-weight:700;border:0;border-radius:12px;background:var(--accent);color:#fff;cursor:pointer}
+  .err{color:var(--bad);min-height:1.2em;margin:10px 0 0;text-align:center}
+  #app{display:none}
+</style>
+</head>
+<body>
+<form id="login">
+  <h1>Resultados · acceso</h1>
+  <label>Email<input type="email" id="email" required autocomplete="username"></label>
+  <label>Contraseña<input type="password" id="pass" required autocomplete="current-password"></label>
+  <button type="submit">Entrar</button>
+  <p class="err" id="loginErr"></p>
+</form>
+
+<div class="wrap" id="app">
+  <header>
+    <div>
+      <h1>Resultados de la encuesta</h1>
+      <p class="sub" id="count"></p>
+    </div>
+    <div class="tools">
+      <input type="date" id="filtro" title="Filtrar por fecha">
+      <button id="limpiarFiltro">Todas</button>
+      <button id="recargar">Actualizar</button>
+      <button id="csv">Exportar CSV</button>
+      <a href="qr.html">QR</a>
+      <button id="salir">Salir</button>
+    </div>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const { url: SB_URL0, anonKey: KEY } = window.SUPABASE_CONFIG;
+const SB_URL = SB_URL0.replace(/\/$/, '');
+const SESS = 'encuestaPilatesSesion';
+const $ = id => document.getElementById(id);
+let todas = [];
+
+// ---------- Sesión (Supabase Auth vía REST) ----------
+function getSesion(){ try { return JSON.parse(localStorage.getItem(SESS)); } catch(e){ return null; } }
+function setSesion(s){ try { s ? localStorage.setItem(SESS, JSON.stringify(s)) : localStorage.removeItem(SESS); } catch(e){} }
+
+async function auth(grant, body){
+  const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=${grant}`, {
+    method:'POST', headers:{ apikey: KEY, 'Content-Type':'application/json' }, body: JSON.stringify(body)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error_description || data.msg || 'Error de acceso');
+  setSesion({ access_token: data.access_token, refresh_token: data.refresh_token });
+}
+
+async function api(path, opts = {}, reintento = true){
+  const s = getSesion();
+  if (!s) throw new Error('NO_SESION');
+  const res = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...opts, headers:{ apikey: KEY, Authorization: 'Bearer ' + s.access_token, ...(opts.headers||{}) }
+  });
+  if (res.status === 401 && reintento) {
+    try { await auth('refresh_token', { refresh_token: s.refresh_token }); }
+    catch(e){ setSesion(null); throw new Error('NO_SESION'); }
+    return api(path, opts, false);
+  }
+  if (!res.ok) throw new Error(await res.text());
+  return res.status === 204 ? null : res.json();
+}
+
+function mostrar(app){
+  $('login').style.display = app ? 'none' : 'block';
+  $('app').style.display = app ? 'block' : 'none';
+}
+
+$('login').onsubmit = async e => {
+  e.preventDefault(); $('loginErr').textContent = '';
+  try { await auth('password', { email: $('email').value.trim(), password: $('pass').value }); cargar(); }
+  catch(ex){ $('loginErr').textContent = 'Email o contraseña incorrectos.'; }
+};
+$('salir').onclick = () => { setSesion(null); todas = []; mostrar(false); };
+
+async function cargar(){
+  try {
+    todas = await api('respuestas?select=*&order=fecha.desc,hora.desc.nullslast,creado.desc');
+    mostrar(true); render();
+  } catch(ex){
+    if (ex.message !== 'NO_SESION') { console.error(ex); alert('No se pudieron cargar los resultados.'); }
+    mostrar(false);
+  }
+}
+
+// ---------- Pintar tarjetas ----------
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmtFecha(f){
+  if(!f) return 'Sin fecha';
+  const [y,m,d] = f.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+const media = (l,k) => l.length ? (l.reduce((s,r)=>s+r[k],0)/l.length).toFixed(1).replace('.',',') : '–';
+function cambio(a,b,mejorSubir){
+  const d = b - a;
+  if (d === 0) return `<small class="eq">=</small>`;
+  const bueno = mejorSubir ? d > 0 : d < 0;
+  return `<small class="${bueno?'up':'down'}">${d>0?'+':''}${d}</small>`;
+}
+
+function render(){
+  const f = $('filtro').value;
+  const lista = todas.filter(r => !f || r.fecha === f);
+  $('count').textContent = `${lista.length} respuesta${lista.length===1?'':'s'}` + (f ? ` el ${fmtFecha(f)}` : ' en total');
+
+  $('stats').innerHTML = lista.length ? `
+    <div class="stat"><div class="k">Dolor medio al empezar</div><div class="v">${media(lista,'dolor_inicio')}</div></div>
+    <div class="stat"><div class="k">Dolor medio al terminar</div><div class="v">${media(lista,'dolor_fin')}</div></div>
+    <div class="stat"><div class="k">Motivación media al empezar</div><div class="v">${media(lista,'motivacion_inicio')}</div></div>
+    <div class="stat"><div class="k">Motivación media al terminar</div><div class="v">${media(lista,'motivacion_fin')}</div></div>` : '';
+
+  if (!lista.length) { $('grid').innerHTML = '<div class="empty">Todavía no hay respuestas.</div>'; return; }
+
+  $('grid').innerHTML = lista.map(r => `
+    <div class="card">
+      <button class="del" data-id="${r.id}" title="Eliminar">✕</button>
+      <div class="card-h">
+        <span class="date">${fmtFecha(r.fecha)}</span>
+        <span class="time">${r.hora ? r.hora.slice(0,5) + ' h' : ''}</span>
+      </div>
+      <div class="metric"><span class="lab">Dolor</span>
+        <span class="val">${r.dolor_inicio} → ${r.dolor_fin}${cambio(r.dolor_inicio,r.dolor_fin,false)}</span></div>
+      <div class="metric"><span class="lab">Motivación</span>
+        <span class="val">${r.motivacion_inicio} → ${r.motivacion_fin}${cambio(r.motivacion_inicio,r.motivacion_fin,true)}</span></div>
+      ${r.zonas && r.zonas.length ? `<div class="metric" style="display:block"><span class="lab">Dónde le dolía</span>
+        <div class="tags">${r.zonas.map(z=>`<span class="tag">${esc(z)}</span>`).join('')}</div></div>` : ''}
+      ${r.gustado ? `<div class="txt"><div class="lab">Le ha gustado</div><p>${esc(r.gustado)}</p></div>` : ''}
+      ${r.cambiarias ? `<div class="txt"><div class="lab">Le ha gustado menos / cambiaría</div><p>${esc(r.cambiarias)}</p></div>` : ''}
+    </div>`).join('');
+
+  document.querySelectorAll('.del').forEach(b => b.onclick = async () => {
+    if (!confirm('¿Eliminar esta respuesta?')) return;
+    try { await api('respuestas?id=eq.' + encodeURIComponent(b.dataset.id), { method:'DELETE' }); }
+    catch(ex){ alert('No se pudo eliminar.'); return; }
+    todas = todas.filter(r => r.id !== b.dataset.id); render();
+  });
+}
+
+// ---------- Exportar ----------
+$('csv').onclick = () => {
+  const cols = ['fecha','hora','dolor_inicio','zonas','motivacion_inicio','dolor_fin','motivacion_fin','gustado','cambiarias'];
+  const q = v => '"' + String(Array.isArray(v) ? v.join(', ') : (v ?? '')).replace(/"/g,'""') + '"';
+  const filas = [cols.join(';')].concat(todas.map(r => cols.map(c => q(r[c])).join(';')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + filas.join('\n')], {type:'text/csv'}));
+  a.download = 'resultados-encuesta.csv'; a.click(); URL.revokeObjectURL(a.href);
+};
+
+$('filtro').onchange = render;
+$('limpiarFiltro').onclick = () => { $('filtro').value = ''; render(); };
+$('recargar').onclick = cargar;
+getSesion() ? cargar() : mostrar(false);
+</script>
+</body>
+</html>
